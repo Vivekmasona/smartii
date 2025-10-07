@@ -6,6 +6,11 @@ export default async function handler(req, res) {
   if (!url) return res.status(400).json({ error: "Missing ?url parameter" });
 
   try {
+    // Direct .mp3/.mp4 link handle
+    if (url.endsWith(".mp3") || url.endsWith(".mp4")) {
+      return res.status(200).json({ success: true, links: [url] });
+    }
+
     const response = await fetch(url);
     const html = await response.text();
     const $ = cheerio.load(html);
