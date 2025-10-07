@@ -10,10 +10,6 @@ header { padding:10px; background:#222; text-align:center; position:sticky; top:
 input { width:70%; padding:10px; border-radius:5px; border:none; }
 button { padding:10px 15px; border:none; background:#007bff; color:white; border-radius:5px; cursor:pointer; }
 iframe { width:100%; height:85vh; border:none; margin-top:10px; }
-#overlay { position:fixed; bottom:20px; right:20px; background:rgba(0,0,0,0.7);
-           padding:10px; border-radius:8px; display:none; z-index:1000; max-width:300px; }
-#overlay button { background:#28a745; color:white; border:none; padding:5px 8px;
-                  border-radius:4px; cursor:pointer; display:block; width:100%; margin-top:5px; }
 </style>
 </head>
 <body>
@@ -24,43 +20,16 @@ iframe { width:100%; height:85vh; border:none; margin-top:10px; }
 
 <iframe id="view"></iframe>
 
-<div id="overlay">
-  <strong>Downloads Found:</strong>
-  <div id="list"></div>
-</div>
-
 <script>
-const input = document.getElementById("url");
-const go = document.getElementById("go");
-const frame = document.getElementById("view");
-const overlay = document.getElementById("overlay");
-const list = document.getElementById("list");
+const input=document.getElementById('url');
+const go=document.getElementById('go');
+const frame=document.getElementById('view');
 
-go.onclick = async () => {
-  const link = input.value.trim();
-  if (!link) return alert("Enter URL first!");
-  const full = link.startsWith("http") ? link : "https://" + link;
-  frame.src = full;
-  overlay.style.display = "none";
-
-  try {
-    const res = await fetch(`/api?url=${encodeURIComponent(full)}`);
-    const data = await res.json();
-    if (data.success && data.links.length) {
-      overlay.style.display = "block";
-      list.innerHTML = "";
-      data.links.forEach((l) => {
-        const btn = document.createElement("button");
-        btn.textContent = l.split("/").pop();
-        btn.onclick = () => window.open(l, "_blank");
-        list.appendChild(btn);
-      });
-    } else {
-      overlay.style.display = "none";
-    }
-  } catch (e) {
-    overlay.style.display = "none";
-  }
+go.onclick=()=>{
+  const link=input.value.trim();
+  if(!link) return alert('Enter URL first!');
+  const full=link.startsWith('http') ? link : 'https://'+link;
+  frame.src='/api/iframe?url='+encodeURIComponent(full);
 };
 </script>
 </body>
