@@ -1,0 +1,17 @@
+{
+  "name": "vercel-single-browser",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "vercel dev",
+    "build": "echo 'No build step required'"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": "22.x"
+  }
+}
