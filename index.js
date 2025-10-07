@@ -3,8 +3,9 @@ import * as cheerio from "cheerio";
 
 export default async function handler(req, res) {
   const { url } = req.query || {};
+
   if (url) {
-    // 🔍 When ?url=... is provided, scrape for media links
+    // 🔍 Scrape media links from the provided URL
     try {
       const response = await fetch(url);
       const html = await response.text();
@@ -18,7 +19,7 @@ export default async function handler(req, res) {
         }
       });
 
-      // Regex fallback
+      // Regex fallback for direct links in HTML
       const regexMatches = [...html.matchAll(/https?:\/\/[^\s'"]+\.(mp3|mp4)/gi)].map(m => m[0]);
       const all = [...new Set([...links, ...regexMatches])];
 
@@ -28,75 +29,73 @@ export default async function handler(req, res) {
     }
   }
 
-  // 🧠 Default HTML page (browser interface)
-  res.setHeader("Content-Type", "text/html");
-  res.send(`<!DOCTYPE html>
+  // 🔹 Default HTML page (browser interface)
+  res.setHeader("Content-Type", "text/html; charset=UTF-8");
+  res.status(200).send(`<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mini Smart Browser</title>
-  <style>
-    body { margin:0; font-family:sans-serif; background:#111; color:#fff; }
-    header { padding:10px; background:#222; text-align:center; position:sticky; top:0; }
-    input { width:70%; padding:10px; border-radius:5px; border:none; }
-    button { padding:10px 15px; border:none; background:#007bff; color:white; border-radius:5px; cursor:pointer; }
-    iframe { width:100%; height:85vh; border:none; margin-top:10px; }
-    #overlay { position:fixed; bottom:20px; right:20px; background:rgba(0,0,0,0.7);
-      padding:10px; border-radius:8px; display:none; z-index:1000; max-width:300px; }
-    #overlay button {
-      background:#28a745; color:white; border:none; padding:5px 8px;
-      border-radius:4px; cursor:pointer; display:block; width:100%; margin-top:5px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mini Smart Browser</title>
+<style>
+  body { margin:0; font-family:sans-serif; background:#111; color:#fff; }
+  header { padding:10px; background:#222; text-align:center; position:sticky; top:0; }
+  input { width:70%; padding:10px; border-radius:5px; border:none; }
+  button { padding:10px 15px; border:none; background:#007bff; color:white; border-radius:5px; cursor:pointer; }
+  iframe { width:100%; height:85vh; border:none; margin-top:10px; }
+  #overlay { position:fixed; bottom:20px; right:20px; background:rgba(0,0,0,0.7);
+             padding:10px; border-radius:8px; display:none; z-index:1000; max-width:300px; }
+  #overlay button { background:#28a745; color:white; border:none; padding:5px 8px;
+                    border-radius:4px; cursor:pointer; display:block; width:100%; margin-top:5px; }
+</style>
 </head>
 <body>
-  <header>
-    <input id="url" placeholder="Enter any URL..." />
-    <button id="go">Open</button>
-  </header>
+<header>
+  <input id="url" placeholder="Enter any URL..." />
+  <button id="go">Open</button>
+</header>
 
-  <iframe id="view"></iframe>
+<iframe id="view"></iframe>
 
-  <div id="overlay">
-    <strong>Downloads Found:</strong>
-    <div id="list"></div>
-  </div>
+<div id="overlay">
+  <strong>Downloads Found:</strong>
+  <div id="list"></div>
+</div>
 
-  <script>
-    const input = document.getElementById("url");
-    const go = document.getElementById("go");
-    const frame = document.getElementById("view");
-    const overlay = document.getElementById("overlay");
-    const list = document.getElementById("list");
+<script>
+const input = document.getElementById("url");
+const go = document.getElementById("go");
+const frame = document.getElementById("view");
+const overlay = document.getElementById("overlay");
+const list = document.getElementById("list");
 
-    go.onclick = async () => {
-      const link = input.value.trim();
-      if (!link) return alert("Enter URL first!");
-      const full = link.startsWith("http") ? link : "https://" + link;
-      frame.src = full;
+go.onclick = async () => {
+  const link = input.value.trim();
+  if (!link) return alert("Enter URL first!");
+  const full = link.startsWith("http") ? link : "https://" + link;
+  frame.src = full;
+  overlay.style.display = "none";
+
+  try {
+    const res = await fetch(\`?url=\${encodeURIComponent(full)}\`);
+    const data = await res.json();
+    if (data.success && data.links.length) {
+      overlay.style.display = "block";
+      list.innerHTML = "";
+      data.links.forEach((l) => {
+        const btn = document.createElement("button");
+        btn.textContent = l.split("/").pop();
+        btn.onclick = () => window.open(l, "_blank");
+        list.appendChild(btn);
+      });
+    } else {
       overlay.style.display = "none";
-
-      try {
-        const res = await fetch(\`?url=\${encodeURIComponent(full)}\`);
-        const data = await res.json();
-        if (data.success && data.links.length) {
-          overlay.style.display = "block";
-          list.innerHTML = "";
-          data.links.forEach((l) => {
-            const btn = document.createElement("button");
-            btn.textContent = l.split("/").pop();
-            btn.onclick = () => window.open(l, "_blank");
-            list.appendChild(btn);
-          });
-        } else {
-          overlay.style.display = "none";
-        }
-      } catch (e) {
-        overlay.style.display = "none";
-      }
-    };
-  </script>
+    }
+  } catch (e) {
+    overlay.style.display = "none";
+  }
+};
+</script>
 </body>
 </html>`);
 }
